@@ -1,28 +1,36 @@
 #pragma once
-#include <Header.h>
+#include "../Header/Header.h"
 
-namespace fop {
+namespace fops
+{
 	#if defined __has_include && __has_include ("QFileDialog")
-	namespace reg {
-		static void open_path_file(QSettings& settings, const QString& param) {
+	namespace reg
+	{
+		static void open_path_file(QSettings& settings, const QString& param)
+		{
 			QString file_path{ QFileDialog::getOpenFileName(0, "Открыть", settings.value(param).toString()) };
-			if (file_path.isEmpty()) {
+			if (file_path.isEmpty())
+			{
 				return;
 			}
 			settings.setValue(param, file_path);
 			return;
 		}
-		static void save_path_file(QSettings& settings, const QString& param) {
+		static void save_path_file(QSettings& settings, const QString& param)
+		{
 			QString file_path{ QFileDialog::getSaveFileName(0, "Сохранить", settings.value(param).toString()) };
-			if (file_path.isEmpty()) {
+			if (file_path.isEmpty())
+			{
 				return;
 			}
 			settings.setValue(param, file_path);
 			return;
 		}
-		static void select_path_dir(QSettings& settings, const QString& param) {
+		static void select_path_dir(QSettings& settings, const QString& param)
+		{
 			QString file_path{ QFileDialog::getExistingDirectory(0, "Выбрать", settings.value(param).toString()) };
-			if (file_path.isEmpty()) {
+			if (file_path.isEmpty())
+			{
 				return;
 			}
 			settings.setValue(param, file_path);
@@ -31,18 +39,23 @@ namespace fop {
 	}
 	#endif
 	#if defined __has_include && __has_include ("QLineEdit")
-	namespace edit {
-		static void insert_path_dir(QLineEdit* edit, QSettings& settings, const QString& param) {
+	namespace edit
+	{
+		static void insert_path_dir(QLineEdit* edit, QSettings& settings, const QString& param)
+		{
 			QString file_path{ QFileDialog::getExistingDirectory(0, "", settings.value(param).toString()) };
-			if (file_path.isEmpty()) {
+			if (file_path.isEmpty())
+			{
 				return;
 			}
 			edit->setText(file_path);
 			return;
 		}
-		static void insert_path_file(QLineEdit* edit, QSettings& settings, const QString& param) {
+		static void insert_path_file(QLineEdit* edit, QSettings& settings, const QString& param)
+		{
 			QString file_path{ QFileDialog::getOpenFileName(0, "", settings.value(param).toString()) };
-			if (file_path.isEmpty()) {
+			if (file_path.isEmpty())
+			{
 				return;
 			}
 			edit->setText(file_path);
@@ -133,10 +146,25 @@ namespace fop {
 	//			std::begin(str), std::end(str)) == std::end(name);
 	//	};
 	//}
+	template<typename T, typename Exe>
+	constexpr bool find(T&& c, T&& s, Exe exe)
+	{
+		return std::search(
+			exe,
+			std::begin(std::forward<T>(c)), std::end(std::forward<T>(c)),
+			std::begin(std::forward<T>(s)), std::end(std::forward<T>(s))
+		) != std::end(c) ? true : false;
+	}
 
-	constexpr auto is_file = [](const auto& entry) {return entry.is_regular_file(); };
-	//namespace fs = std::filesystem;
-	static bool is_not_file(const fs::directory_entry& entry) { return !entry.is_regular_file(); };
+	constexpr auto is_file = [](const auto& entry)
+	{
+		return entry.is_regular_file();
+	};
+
+	static bool is_not_file(const fs::directory_entry& entry)
+	{
+		return !entry.is_regular_file();
+	};
 
 	//static bool is_equally_size(const fs::path& dir) {
 	//	uint64_t old{ 0 };
@@ -182,7 +210,8 @@ namespace fop {
 	//static decltype(auto) data_rationing(const std::vector<char>& data) {
 	//	return ranges::actions::transform(rationing);
 	//};
-	constexpr auto read_file = [](const fs::directory_entry& entry) {
+	constexpr auto read_file = [](const fs::directory_entry& entry)
+	{
 		fs::path file{ entry.path() };
 		std::ifstream src(file, std::ios::binary);
 		std::vector<char> out(static_cast<int>(fs::file_size(file)));
@@ -211,4 +240,15 @@ namespace fop {
 	////	}
 	////	return in;
 	////};
+}
+
+TEST(CheckIsTrue, Find)
+{
+	fs::path dir{ fs::current_path() };
+	for (const auto& entry : fs::directory_iterator{ dir }
+		 | views::remove_if(fops::is_not_file)
+		 )
+	{
+		//ASSERT_EQ(entry.is_regular_file(), false);
+	}
 }
