@@ -1,5 +1,5 @@
 #pragma once
-#include "../Header/Header.h"
+#include <Header.h>
 
 namespace fops
 {
@@ -146,22 +146,24 @@ namespace fops
 	//			std::begin(str), std::end(str)) == std::end(name);
 	//	};
 	//}
-	template<typename T, typename Exe>
-	constexpr bool find(T&& c, T&& s, Exe exe)
+	namespace data
 	{
-		return std::search(
-			exe,
-			std::begin(std::forward<T>(c)), std::end(std::forward<T>(c)),
-			std::begin(std::forward<T>(s)), std::end(std::forward<T>(s))
-		) != std::end(c) ? true : false;
+		template<typename T, typename Exe>
+		constexpr bool find(T&& c, T&& s, Exe exe)
+		{
+			return std::search(
+				exe,
+				std::begin(std::forward<T>(c)), std::end(std::forward<T>(c)),
+				std::begin(std::forward<T>(s)), std::end(std::forward<T>(s))
+			) != std::end(c) ? true : false;
+		}
 	}
-
 	constexpr auto is_file = [](const auto& entry)
 	{
 		return entry.is_regular_file();
 	};
 
-	static bool is_not_file(const fs::directory_entry& entry)
+	bool is_not_file(const fs::directory_entry& entry)
 	{
 		return !entry.is_regular_file();
 	};
@@ -241,14 +243,27 @@ namespace fops
 	////	return in;
 	////};
 }
-
-TEST(CheckIsTrue, Find)
+TEST(CheckIsTrue, IsNotFile)
 {
 	fs::path dir{ fs::current_path() };
 	for (const auto& entry : fs::directory_iterator{ dir }
 		 | views::remove_if(fops::is_not_file)
 		 )
 	{
-		//ASSERT_EQ(entry.is_regular_file(), false);
+		ASSERT_EQ(entry.is_regular_file(), true);
 	}
+}
+
+TEST(CheckOps, FindData)
+{
+	std::vector<u8> input{ 0x21, 0xff, 0x21, 0x54, 0xff, 0x78, 0xde, 0xa7, 0xff, 0x23, };
+	std::vector<u8> bad{ 0x21, 0x00, 0xff, 0x23, 0xff, 0xa7 };
+	std::vector<u8> correct{ 0x21, 0x54, 0xff, 0x78, 0xde, 0xa7 };
+	std::vector<u8> big{ 0x21, 0xff, 0xff, 0xa7, 0xde, 0xa7, 0x54, 0xff, 0x78, 0xde, 0xa7, 0x54, 0xff, 0x23, 0xff, 0xa7 };
+	std::vector<u8> correct_big{ 0x21, 0xff, 0x21, 0x54, 0xff, 0x78, 0xde, 0xa7, 0xff, 0x23, 0x21, 0x54, 0xff, 0x78, 0xde, 0xa7 };
+
+	EXPECT_EQ(fops::data::find(input, bad, std::execution::par_unseq), false);
+	EXPECT_EQ(fops::data::find(input, correct, std::execution::par_unseq), true);
+	EXPECT_EQ(fops::data::find(input, big, std::execution::par_unseq), false);
+	EXPECT_EQ(fops::data::find(input, correct_big, std::execution::par_unseq), false);
 }
